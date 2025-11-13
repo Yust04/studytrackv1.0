@@ -1,28 +1,47 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LabService } from "../../business/services/LabService";
+import { STATUS } from "../../models/LabWork";
+import Modal from "./ui/Modal";
+import Button from "./ui/Button";
 
 export default function LabModal({ open, onClose, uid, semesterId, subjectId, lab, maxScore }) {
   const [score, setScore] = useState(lab?.obtainedScore ?? "");
 
-  if (!open) return null;
+  useEffect(() => {
+    setScore(lab?.obtainedScore ?? "");
+  }, [lab]);
+
+  if (!open || !lab) return null;
 
   const save = async () => {
     const value = Number(score);
-    if (isNaN(value) || value < 0 || value > Number(maxScore)) return alert("Невірний бал");
-    await LabService.patch(uid, semesterId, subjectId, lab.id, { obtainedScore: value, status: "захищено" });
+    if (Number.isNaN(value) || value < 0 || value > Number(maxScore)) {
+      return alert("Введіть коректний бал у дозволеному діапазоні.");
+    }
+    await LabService.patch(uid, semesterId, subjectId, lab.id, { obtainedScore: value, status: STATUS.DEFENDED });
     onClose();
   };
 
   return (
-    <div className="modal" onClick={onClose}>
-      <div className="modal-box" onClick={e=>e.stopPropagation()}>
-        <h3>Введи бал (макс. {maxScore})</h3>
-        <input className="input" value={score} onChange={e=>setScore(e.target.value)} />
-        <div className="row" style={{marginTop:12, justifyContent:"flex-end"}}>
-          <button className="btn" onClick={onClose}>Скасувати</button>
-          <button className="btn" onClick={save}>Зберегти</button>
-        </div>
-      </div>
-    </div>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={`Підтвердження захисту (макс. ${maxScore})`}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Скасувати
+          </Button>
+          <Button variant="primary" onClick={save}>
+            Зберегти
+          </Button>
+        </>
+      }
+    >
+      <p className="text-sm">
+        Укажіть кількість балів, отриманих за роботу. Після збереження статус зміниться на «Захищено».
+      </p>
+      <input className="input" value={score} onChange={(e) => setScore(e.target.value)} placeholder="Отримано балів" />
+    </Modal>
   );
 }

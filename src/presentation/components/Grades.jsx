@@ -1,29 +1,41 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { SubjectService } from "../../business/services/SubjectService";
 import Button from "./ui/Button";
 
 export default function Grades({ uid, activeSemester, subjects = [], labsBySubject = {} }) {
-  const [local, setLocal] = useState({}); // { [subjectId]: { modules: [...] } }
+  const [local, setLocal] = useState({});
+  const [expanded, setExpanded] = useState({});
+
   useEffect(() => {
     const map = {};
-    (subjects || []).forEach(s => {
-      map[s.id] = { modules: Array.isArray(s.modules) ? s.modules.map(m => ({ ...m })) : [] };
+    (subjects || []).forEach((s) => {
+      map[s.id] = { modules: Array.isArray(s.modules) ? s.modules.map((m) => ({ ...m })) : [] };
     });
     setLocal(map);
   }, [subjects]);
 
-  if (!activeSemester) return <div className="card">Оберіть активний семестр</div>;
+  useEffect(() => {
+    setExpanded((prev) => {
+      const next = {};
+      (subjects || []).forEach((s) => {
+        next[s.id] = prev[s.id] || false;
+      });
+      return next;
+    });
+  }, [subjects]);
+
+  if (!activeSemester) return <div className="card text-slate-600">Спочатку активуйте семестр.</div>;
 
   const setModuleField = (sid, idx, key, value) => {
-    setLocal(prev => {
+    setLocal((prev) => {
       const mods = [...(prev[sid]?.modules || [])];
-      mods[idx] = { ...(mods[idx] || {}), [key]: key === 'name' ? value : (value) };
+      mods[idx] = { ...(mods[idx] || {}), [key]: value };
       return { ...prev, [sid]: { modules: mods } };
     });
   };
 
   const addModule = (sid) => {
-    setLocal(prev => {
+    setLocal((prev) => {
       const mods = [...(prev[sid]?.modules || [])];
       mods.push({ name: `Модуль ${mods.length + 1}`, max: "", obtained: "" });
       return { ...prev, [sid]: { modules: mods } };
@@ -31,7 +43,7 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
   };
 
   const removeModule = (sid, idx) => {
-    setLocal(prev => {
+    setLocal((prev) => {
       const mods = [...(prev[sid]?.modules || [])];
       mods.splice(idx, 1);
       return { ...prev, [sid]: { modules: mods } };
@@ -39,7 +51,7 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
   };
 
   const save = async (sid) => {
-    const mods = (local[sid]?.modules || []).map(m => ({
+    const mods = (local[sid]?.modules || []).map((m) => ({
       name: String(m.name || "Модуль"),
       max: Number(m.max || 0) || 0,
       obtained: Number(m.obtained || 0) || 0,
@@ -49,76 +61,102 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
 
   const totalsFor = (sid) => {
     const mods = local[sid]?.modules || [];
-    const max = mods.reduce((s, m) => s + (Number(m.max) || 0), 0);
-    const obt = mods.reduce((s, m) => s + (Number(m.obtained) || 0), 0);
-    const pct = max ? Math.round((obt / max) * 100) : 0;
-    return { max, obt, pct };
+    const labs = labsBySubject[sid] || [];
+    const labsMax = labs.reduce((sum, l) => sum + (Number(l.maxScore) || 0), 0);
+    const labsObt = labs.reduce((sum, l) => sum + (Number(l.obtainedScore) || 0), 0);
+    const modulesMax = mods.reduce((sum, m) => sum + (Number(m.max) || 0), 0);
+    const modulesObt = mods.reduce((sum, m) => sum + (Number(m.obtained) || 0), 0);
+    const totalMax = labsMax + modulesMax;
+    const totalObt = labsObt + modulesObt;
+    const pct = totalMax ? Math.round((totalObt / totalMax) * 100) : 0;
+    return { totalMax, totalObt, pct, labs, mods };
+  };
+
+  const toggleSubject = (sid) => {
+    setExpanded((prev) => ({ ...prev, [sid]: !prev[sid] }));
   };
 
   return (
-    <div className="card">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold">Оцінки по предметах</h3>
+    <div className="space-y-5">
+      <div className="card">
+        <p className="text-sm text-slate-500">Оцінювання</p>
+        <h3 className="text-2xl font-semibold text-slate-900">Оцінки по предметах</h3>
+        <p className="text-sm text-slate-500">Переглядайте бали за захищені лабораторні та записуйте бали за модулі, щоб мати повну картину</p>
       </div>
 
-      <div className="mt-3 space-y-4">
-        {subjects.map(s => {
-          const mods = local[s.id]?.modules || [];
-          const labs = labsBySubject[s.id] || [];
-          const labsMax = labs.reduce((sum, l)=> sum + (Number(l.maxScore)||0), 0);
-          const labsObt = labs.reduce((sum, l)=> sum + (Number(l.obtainedScore)||0), 0);
-          const modulesMax = mods.reduce((sum, m)=> sum + (Number(m.max)||0), 0);
-          const modulesObt = mods.reduce((sum, m)=> sum + (Number(m.obtained)||0), 0);
-          const totalMax = labsMax + modulesMax;
-          const totalObt = labsObt + modulesObt;
-          const pct = totalMax ? Math.round((totalObt/totalMax)*100) : 0;
+      <div className="space-y-4">
+        {subjects.map((s) => {
+          const { totalMax, totalObt, pct, labs, mods } = totalsFor(s.id);
+          const isOpen = !!expanded[s.id];
 
           return (
-            <div key={s.id} className="bg-white rounded-2xl shadow-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="font-medium">{s.title}</div>
-                <div className="text-sm text-gray-600">Разом: {totalObt}/{totalMax} ({pct}%)</div>
-              </div>
-
-              {/* Table-like grades */}
-              <div className="overflow-x-auto">
-                <div className="min-w-[520px]">
-                  <div className="grid grid-cols-[1fr_120px_120px] gap-2 text-sm font-medium text-gray-600 mb-2">
-                    <div>Лабораторні</div>
-                    <div className="text-right">Отримано</div>
-                    <div className="text-right">Макс</div>
-                  </div>
-                  {labs.map(l => (
-                    <div key={l.id} className="grid grid-cols-[1fr_120px_120px] gap-2 py-1 border-t border-gray-100">
-                      <div>Робота №{l.number} {l.topic ? `— ${l.topic}`: ''}</div>
-                      <div className="text-right">{l.obtainedScore ?? '—'}</div>
-                      <div className="text-right">{l.maxScore}</div>
-                    </div>
-                  ))}
-
-                  <div className="grid grid-cols-[1fr_120px_120px] gap-2 text-sm font-medium text-gray-600 mt-4 mb-2">
-                    <div>Модульні</div>
-                    <div className="text-right">Отримано</div>
-                    <div className="text-right">Макс</div>
-                  </div>
-                  {mods.map((m, i) => (
-                    <div key={i} className="grid grid-cols-[1fr_120px_120px_auto] items-center gap-2 py-1 border-t border-gray-100">
-                      <input className="input" placeholder="Назва" value={m.name ?? ''} onChange={e=>setModuleField(s.id, i, 'name', e.target.value)} />
-                      <input className="input text-right" placeholder="Отримано" value={m.obtained ?? ''} onChange={e=>setModuleField(s.id, i, 'obtained', e.target.value)} />
-                      <input className="input text-right" placeholder="Макс" value={m.max ?? ''} onChange={e=>setModuleField(s.id, i, 'max', e.target.value)} />
-                      <Button className="ml-2" onClick={()=>removeModule(s.id, i)}>Видалити</Button>
-                    </div>
-                  ))}
+            <div key={s.id} className="card">
+              <button type="button" className="w-full flex items-center justify-between text-left" onClick={() => toggleSubject(s.id)}>
+                <div>
+                  <p className="text-lg font-semibold text-slate-900">{s.title}</p>
+                  <p className="text-sm text-slate-500">
+                    Набрано {totalObt}/{totalMax} ({pct}%)
+                  </p>
                 </div>
-              </div>
+                <span className="text-2xl text-slate-400">{isOpen ? "−" : "+"}</span>
+              </button>
 
-              <div className="mt-3 flex items-center justify-between">
-                <Button onClick={()=>addModule(s.id)}>+ Додати модуль</Button>
-                <Button variant="primary" onClick={()=>save(s.id)}>Зберегти</Button>
-              </div>
+              {isOpen && (
+                <div className="mt-4 space-y-5">
+                  <div>
+                    <p className="text-sm text-slate-500 mb-2">Лабораторні</p>
+                    <div className="border border-slate-200 rounded-2xl divide-y">
+                      <div className="grid grid-cols-[1fr_120px_120px] text-xs uppercase tracking-wide text-slate-500">
+                        <div className="px-3 py-2">Назва</div>
+                        <div className="px-3 py-2 text-right">Отримано</div>
+                        <div className="px-3 py-2 text-right">Макс.</div>
+                      </div>
+                      {labs.length === 0 ? (
+                        <div className="px-3 py-3 text-sm text-slate-500">Ще немає лабораторних.</div>
+                      ) : (
+                        labs.map((l) => (
+                          <div key={l.id} className="grid grid-cols-[1fr_120px_120px] text-sm text-slate-600">
+                            <div className="px-3 py-2">Лаба №{l.number}{l.topic ? ` • ${l.topic}` : ""}</div>
+                            <div className="px-3 py-2 text-right">{l.obtainedScore ?? "—"}</div>
+                            <div className="px-3 py-2 text-right">{l.maxScore}</div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm text-slate-500">Модулі</p>
+                      <Button onClick={() => addModule(s.id)}>+ Додати модуль</Button>
+                    </div>
+                    <div className="space-y-3">
+                      {mods.map((m, i) => (
+                        <div key={i} className="grid grid-cols-[1fr_140px_140px_auto] gap-3">
+                          <input className="input" placeholder="Назва" value={m.name ?? ""} onChange={(e) => setModuleField(s.id, i, "name", e.target.value)} />
+                          <input className="input text-right" placeholder="Отримано" value={m.obtained ?? ""} onChange={(e) => setModuleField(s.id, i, "obtained", e.target.value)} />
+                          <input className="input text-right" placeholder="Макс." value={m.max ?? ""} onChange={(e) => setModuleField(s.id, i, "max", e.target.value)} />
+                          <Button variant="danger" onClick={() => removeModule(s.id, i)}>
+                            Видалити
+                          </Button>
+                        </div>
+                      ))}
+                      {mods.length === 0 && <div className="text-sm text-slate-500">Додайте перший модуль.</div>}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button variant="primary" onClick={() => save(s.id)}>
+                      Зберегти оцінки
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
+
+        {subjects.length === 0 && <div className="card text-center text-slate-500 py-10">Щоб вести оцінки, спочатку додайте предмети.</div>}
       </div>
     </div>
   );

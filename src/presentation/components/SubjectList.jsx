@@ -8,7 +8,7 @@ export default function SubjectList({ uid, activeSemester, onOpenSubject }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ title: "", teacher: "", controlType: "", iconUrl: "" });
   const [file, setFile] = useState(null);
-  const [edit, setEdit] = useState({ open:false, id:null, form:{ title:"", teacher:"", controlType:"", iconUrl:"" }, file:null });
+  const [edit, setEdit] = useState({ open: false, id: null, form: { title: "", teacher: "", controlType: "", iconUrl: "" }, file: null });
   const [saving, setSaving] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -16,11 +16,11 @@ export default function SubjectList({ uid, activeSemester, onOpenSubject }) {
     if (!f) return false;
     const allowed = ["image/png", "image/jpeg", "image/webp"];
     if (!allowed.includes(f.type)) {
-      alert("Підтримуються PNG, JPG/JPEG або WEBP (до 5 МБ)");
+      alert("Дозволені лише PNG, JPG/JPEG або WEBP (до 5 МБ).");
       return false;
     }
     if (f.size > 5 * 1024 * 1024) {
-      alert("Файл завеликий. Максимум 5 МБ");
+      alert("Файл завеликий. Обмеження — 5 МБ.");
       return false;
     }
     return true;
@@ -32,30 +32,29 @@ export default function SubjectList({ uid, activeSemester, onOpenSubject }) {
     return () => unsub && unsub();
   }, [uid, activeSemester]);
 
+  const resetForm = () => setForm({ title: "", teacher: "", controlType: "", iconUrl: "" });
+
   const add = async () => {
-    if (!form.title) return alert("Вкажіть назву предмету");
+    if (!form.title.trim()) return alert("Додайте назву предмета.");
     setSaving(true);
     try {
       const docRef = await SubjectService.add(uid, activeSemester.id, form);
-      if (file && docRef && docRef.id) {
+      if (file && docRef?.id && canUpload(file)) {
         try {
-          if (canUpload(file)) {
-            const { storage } = await import("../../firebase");
-            const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
-            const path = `users/${uid}/subjects/${docRef.id}/icon`;
-            const sref = ref(storage, path);
-            const snap = await uploadBytes(sref, file, { contentType: file.type || undefined });
-            const url = await getDownloadURL(snap.ref);
-            await SubjectService.patch(uid, activeSemester.id, docRef.id, { iconUrl: url });
-            // optimistic UI
-            setSubjects((prev)=>prev.map(s=> s.id===docRef.id ? { ...s, iconUrl: url } : s));
-          }
+          const { storage } = await import("../../firebase");
+          const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+          const path = `users/${uid}/subjects/${docRef.id}/icon`;
+          const sref = ref(storage, path);
+          const snap = await uploadBytes(sref, file, { contentType: file.type || undefined });
+          const url = await getDownloadURL(snap.ref);
+          await SubjectService.patch(uid, activeSemester.id, docRef.id, { iconUrl: url });
+          setSubjects((prev) => prev.map((s) => (s.id === docRef.id ? { ...s, iconUrl: url } : s)));
         } catch (e) {
           console.error("Upload icon failed", e);
-          alert(`Не вдалося завантажити іконку: ${e?.code || e?.name || ''} ${e?.message || ''}`);
+          alert(`Не вдалося завантажити іконку: ${e?.message || e?.code || "невідома помилка"}`);
         }
       }
-      setForm({ title: "", teacher: "", controlType: "", iconUrl: "" });
+      resetForm();
       setFile(null);
       setOpen(false);
     } finally {
@@ -64,116 +63,164 @@ export default function SubjectList({ uid, activeSemester, onOpenSubject }) {
   };
 
   const remove = async (id) => {
-    if (confirm("Видалити предмет?")) await SubjectService.remove(uid, activeSemester.id, id);
+    if (confirm("Видалити предмет?")) {
+      await SubjectService.remove(uid, activeSemester.id, id);
+    }
   };
 
-  if (!activeSemester) return <div className="card">Оберіть активний семестр</div>;
+  if (!activeSemester) {
+    return <div className="card text-slate-600">Спершу активуйте семестр, щоб працювати зі списком предметів.</div>;
+  }
+
+  const openEditModal = (subject) => {
+    setEdit({
+      open: true,
+      id: subject.id,
+      form: {
+        title: subject.title || "",
+        teacher: subject.teacher || "",
+        controlType: subject.controlType || "",
+        iconUrl: subject.iconUrl || "",
+      },
+      file: null,
+    });
+  };
+
+  const onEditSave = async () => {
+    if (!edit.id) return;
+    setSavingEdit(true);
+    try {
+      await SubjectService.patch(uid, activeSemester.id, edit.id, edit.form);
+      if (edit.file && canUpload(edit.file)) {
+        const { storage } = await import("../../firebase");
+        const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+        const path = `users/${uid}/subjects/${edit.id}/icon`;
+        const sref = ref(storage, path);
+        const snap = await uploadBytes(sref, edit.file, { contentType: edit.file.type || undefined });
+        const url = await getDownloadURL(snap.ref);
+        await SubjectService.patch(uid, activeSemester.id, edit.id, { iconUrl: url });
+        setSubjects((prev) => prev.map((s) => (s.id === edit.id ? { ...s, iconUrl: url } : s)));
+      }
+      setEdit({ open: false, id: null, form: { title: "", teacher: "", controlType: "", iconUrl: "" }, file: null });
+    } catch (e) {
+      alert(`Не вдалося зберегти: ${e?.message || e?.code || "невідомо"}`);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   return (
-    <div className="card">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-semibold">Предмети (семестр {activeSemester.number})</h3>
-        <Button variant="primary" onClick={() => setOpen(true)}>+ Додати предмет</Button>
+    <div className="space-y-4">
+      <div className="card flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-sm text-slate-500">Активний семестр {activeSemester.number}</p>
+          <h3 className="text-2xl font-semibold text-slate-900">Список предметів</h3>
+          <p className="text-sm text-slate-500">Додавайте іконки, викладача та тип контролю.</p>
+        </div>
+        <Button variant="primary" onClick={() => setOpen(true)}>
+          + Додати предмет
+        </Button>
       </div>
 
-      <div className="mt-3 space-y-2">
-        {subjects.map(s => (
-          <div key={s.id} className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-20 h-20 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center shrink-0">
-                {s.iconUrl ? <img src={s.iconUrl} alt="icon" className="w-full h-full object-cover" /> : <div className="w-8 h-8 bg-gray-300 rounded" />}
+      {subjects.length === 0 ? (
+        <div className="card text-center text-slate-500 py-12">У цьому семестрі ще немає предметів.</div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {subjects.map((s) => (
+            <div key={s.id} className="card flex flex-col gap-4">
+              <div className="flex items-center gap-4">
+                <div className="subject-icon">
+                  {s.iconUrl ? <img src={s.iconUrl} alt="icon" /> : <div className="w-full h-full rounded-full bg-slate-200" />}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-lg font-semibold text-slate-900 truncate">{s.title}</p>
+                  <div className="flex flex-wrap gap-2 mt-1 text-sm">
+                    {s.controlType && <span className="badge badge-accent">{s.controlType}</span>}
+                    {s.teacher && <span className="badge">{s.teacher}</span>}
+                  </div>
+                </div>
               </div>
-              <div><b>{s.title}</b> <span className="badge">{s.controlType || "—"}</span></div>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => onOpenSubject(s)}>Переглянути</Button>
+                <Button onClick={() => openEditModal(s)}>Редагувати</Button>
+                <Button variant="danger" onClick={() => remove(s.id)}>
+                  Видалити
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={() => onOpenSubject(s)}>Відкрити</Button>
-              <Button onClick={() => setEdit({ open:true, id:s.id, form:{ title:s.title||"", teacher:s.teacher||"", controlType:s.controlType||"", iconUrl:s.iconUrl||"" }, file:null })}>Редагувати</Button>
-              <Button variant="danger" onClick={() => remove(s.id)}>Видалити</Button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Створення предмету"
+        title="Новий предмет"
         footer={
           <>
-            <Button onClick={() => setOpen(false)} disabled={saving}>Скасувати</Button>
-            <Button variant="primary" onClick={add} disabled={saving}>{saving ? "Збереження..." : "Створити"}</Button>
+            <Button variant="ghost" onClick={() => setOpen(false)} disabled={saving}>
+              Скасувати
+            </Button>
+            <Button variant="primary" onClick={add} disabled={saving}>
+              {saving ? "Зберігаємо…" : "Додати"}
+            </Button>
           </>
         }
       >
         <div className="space-y-3">
-          <input className="input" placeholder="Назва" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
-          <input className="input" placeholder="Викладач (необов'язково)" value={form.teacher} onChange={e => setForm({ ...form, teacher: e.target.value })} />
-          <input className="input" placeholder="Тип контролю (екзамен/залік)" value={form.controlType} onChange={e => setForm({ ...form, controlType: e.target.value })} />
-          <input className="input" type="file" accept="image/png,image/jpeg,image/webp" onChange={e => setFile(e.target.files?.[0] || null)} />
+          <input className="input" placeholder="Назва предмета" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+          <input className="input" placeholder="Викладач / куратор" value={form.teacher} onChange={(e) => setForm({ ...form, teacher: e.target.value })} />
+          <input className="input" placeholder="Форма контролю (іспит, залік…)" value={form.controlType} onChange={(e) => setForm({ ...form, controlType: e.target.value })} />
+          <input className="input" type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setFile(e.target.files?.[0] || null)} />
           {file && (
-            <div className="flex items-center gap-3">
-              <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100">
+            <div className="flex items-center gap-3 text-sm text-slate-500">
+              <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100">
                 <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
               </div>
-              <div className="text-sm text-gray-600">Попередній перегляд іконки</div>
+              <span>Попередній перегляд іконки</span>
             </div>
           )}
         </div>
       </Modal>
 
-      {/* Edit subject */}
       <Modal
         open={edit.open}
-        onClose={() => setEdit({ open:false, id:null, form:edit.form, file:null })}
-        title="Редагування предмету"
+        onClose={() => setEdit({ open: false, id: null, form: edit.form, file: null })}
+        title="Редагування предмета"
         footer={
           <>
-            <Button onClick={()=>setEdit({ open:false, id:null, form:{ title:"", teacher:"", controlType:"", iconUrl:"" }, file:null })} disabled={savingEdit}>Скасувати</Button>
-            <Button variant="primary" onClick={async ()=>{
-              setSavingEdit(true);
-              try {
-                await SubjectService.patch(uid, activeSemester.id, edit.id, edit.form);
-                if (edit.file) {
-                  try {
-                    if (canUpload(edit.file)) {
-                      const { storage } = await import("../../firebase");
-                      const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
-                      const path = `users/${uid}/subjects/${edit.id}/icon`;
-                      const sref = ref(storage, path);
-                      const snap = await uploadBytes(sref, edit.file, { contentType: edit.file.type || undefined });
-                      const url = await getDownloadURL(snap.ref);
-                      await SubjectService.patch(uid, activeSemester.id, edit.id, { iconUrl: url });
-                      // optimistic UI
-                      setSubjects((prev)=>prev.map(s=> s.id===edit.id ? { ...s, iconUrl: url } : s));
-                    }
-                  } catch(e){ console.error(e); alert(`Не вдалося оновити іконку: ${e?.code || e?.name || ''} ${e?.message || ''}`); }
-                }
-                setEdit({ open:false, id:null, form:{ title:"", teacher:"", controlType:"", iconUrl:"" }, file:null });
-              } finally {
-                setSavingEdit(false);
-              }
-            }} disabled={savingEdit}>{savingEdit ? "Збереження..." : "Зберегти"}</Button>
+            <Button
+              variant="ghost"
+              onClick={() => setEdit({ open: false, id: null, form: { title: "", teacher: "", controlType: "", iconUrl: "" }, file: null })}
+              disabled={savingEdit}
+            >
+              Скасувати
+            </Button>
+            <Button variant="primary" onClick={onEditSave} disabled={savingEdit}>
+              {savingEdit ? "Оновлюємо…" : "Зберегти"}
+            </Button>
           </>
         }
       >
         <div className="space-y-3">
-          <input className="input" placeholder="Назва" value={edit.form.title} onChange={e=>setEdit({...edit, form:{...edit.form, title:e.target.value}})} />
-          <input className="input" placeholder="Викладач" value={edit.form.teacher} onChange={e=>setEdit({...edit, form:{...edit.form, teacher:e.target.value}})} />
-          <input className="input" placeholder="Тип контролю" value={edit.form.controlType} onChange={e=>setEdit({...edit, form:{...edit.form, controlType:e.target.value}})} />
-          <input className="input" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>setEdit({...edit, file: e.target.files?.[0] || null})} />
-          <div className="flex items-center gap-3">
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100">
+          <input className="input" placeholder="Назва предмета" value={edit.form.title} onChange={(e) => setEdit({ ...edit, form: { ...edit.form, title: e.target.value } })} />
+          <input className="input" placeholder="Викладач" value={edit.form.teacher} onChange={(e) => setEdit({ ...edit, form: { ...edit.form, teacher: e.target.value } })} />
+          <input className="input" placeholder="Форма контролю" value={edit.form.controlType} onChange={(e) => setEdit({ ...edit, form: { ...edit.form, controlType: e.target.value } })} />
+          <input className="input" type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setEdit({ ...edit, file: e.target.files?.[0] || null })} />
+          <div className="flex items-center gap-3 text-sm text-slate-500">
+            <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100">
               {edit.file ? (
                 <img src={URL.createObjectURL(edit.file)} alt="preview" className="w-full h-full object-cover" />
+              ) : edit.form.iconUrl ? (
+                <img src={edit.form.iconUrl} alt="icon" className="w-full h-full object-cover" />
               ) : (
-                edit.form.iconUrl ? <img src={edit.form.iconUrl} alt="icon" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200" />
+                <div className="w-full h-full bg-slate-200" />
               )}
             </div>
-            <div className="text-sm text-gray-600">Попередній перегляд іконки</div>
+            <span>Поточна іконка предмета</span>
           </div>
         </div>
       </Modal>
     </div>
   );
 }
-
