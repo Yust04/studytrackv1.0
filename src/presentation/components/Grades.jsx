@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { SubjectService } from "../../business/services/SubjectService";
 import Button from "./ui/Button";
 
@@ -24,7 +24,7 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
     });
   }, [subjects]);
 
-  if (!activeSemester) return <div className="card text-slate-600">Спочатку активуйте семестр.</div>;
+  if (!activeSemester) return <div className="card text-slate-600">Активуйте семестр, щоб працювати з оцінками.</div>;
 
   const setModuleField = (sid, idx, key, value) => {
     setLocal((prev) => {
@@ -79,9 +79,9 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
   return (
     <div className="space-y-5">
       <div className="card">
-        <p className="text-sm text-slate-500">Оцінювання</p>
-        <h3 className="text-2xl font-semibold text-slate-900">Оцінки по предметах</h3>
-        <p className="text-sm text-slate-500">Переглядайте бали за захищені лабораторні та записуйте бали за модулі, щоб мати повну картину</p>
+        <p className="text-sm text-slate-500">Панель успішності</p>
+        <h3 className="text-2xl font-semibold text-slate-900">Успішність за предметами</h3>
+        <p className="text-sm text-slate-500">Відстежуйте бали за лабораторні роботи та модулі, щоб мати повну картину прогресу.</p>
       </div>
 
       <div className="space-y-4">
@@ -95,7 +95,7 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
                 <div>
                   <p className="text-lg font-semibold text-slate-900">{s.title}</p>
                   <p className="text-sm text-slate-500">
-                    Набрано {totalObt}/{totalMax} ({pct}%)
+                    Набрано балів {totalObt}/{totalMax} ({pct}%)
                   </p>
                 </div>
                 <span className="text-2xl text-slate-400">{isOpen ? "−" : "+"}</span>
@@ -104,29 +104,29 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
               {isOpen && (
                 <div className="mt-4 space-y-5">
                   <div>
-                    <p className="text-sm text-slate-500 mb-2">����������� ������</p>
+                    <p className="text-sm text-slate-500 mb-2">Лабораторні роботи</p>
                     <div className="border border-slate-200 rounded-2xl divide-y responsive-table">
                       <div className="grid grid-cols-[1fr_120px_120px] text-xs uppercase tracking-wide text-slate-500 responsive-table__header">
-                        <div className="px-3 py-2">�����</div>
-                        <div className="px-3 py-2 text-right">��������</div>
-                        <div className="px-3 py-2 text-right">����.</div>
+                        <div className="px-3 py-2">Назва</div>
+                        <div className="px-3 py-2 text-right">Отримано</div>
+                        <div className="px-3 py-2 text-right">Макс.</div>
                       </div>
                       {labs.length === 0 ? (
-                        <div className="px-3 py-3 text-sm text-slate-500">�� ���� ������������ ����.</div>
+                        <div className="px-3 py-3 text-sm text-slate-500">Ще немає лабораторних робіт.</div>
                       ) : (
                         labs.map((l) => (
                           <div key={l.id} className="grid grid-cols-[1fr_120px_120px] text-sm text-slate-600 responsive-table__row">
                             <div className="px-3 py-2 responsive-table__cell">
-                              <span className="responsive-table__cell-label">�����</span>
-                              ����������� �{l.number}
-                              {l.topic ? " � " + l.topic : ""}
+                              <span className="responsive-table__cell-label">Назва</span>
+                              Лабораторна №{l.number}
+                              {l.topic ? ` — ${l.topic}` : ""}
                             </div>
                             <div className="px-3 py-2 text-right responsive-table__cell">
-                              <span className="responsive-table__cell-label">��������</span>
-                              {l.obtainedScore ?? "�"}
+                              <span className="responsive-table__cell-label">Отримано</span>
+                              {l.obtainedScore ?? "—"}
                             </div>
                             <div className="px-3 py-2 text-right responsive-table__cell">
-                              <span className="responsive-table__cell-label">����.</span>
+                              <span className="responsive-table__cell-label">Макс.</span>
                               {l.maxScore}
                             </div>
                           </div>
@@ -151,7 +151,7 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
                           </Button>
                         </div>
                       ))}
-                      {mods.length === 0 && <div className="text-sm text-slate-500">Додайте перший модуль.</div>}
+                      {mods.length === 0 && <div className="text-sm text-slate-500">Модулі ще не додані.</div>}
                     </div>
                   </div>
 
@@ -166,14 +166,8 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
           );
         })}
 
-        {subjects.length === 0 && <div className="card text-center text-slate-500 py-10">Щоб вести оцінки, спочатку додайте предмети.</div>}
+        {subjects.length === 0 && <div className="card text-center text-slate-500 py-10">Список оцінок поки що порожній, додайте предмети й поверніться сюди пізніше.</div>}
       </div>
     </div>
   );
 }
-
-
-
-
-
-
