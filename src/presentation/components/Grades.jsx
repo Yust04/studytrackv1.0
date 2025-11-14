@@ -104,28 +104,29 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
               {isOpen && (
                 <div className="mt-4 space-y-5">
                   <div>
-                    <p className="text-sm text-slate-500 mb-2">?>???+???????'???????-</p>
+                    <p className="text-sm text-slate-500 mb-2">Лабораторні роботи</p>
                     <div className="border border-slate-200 rounded-2xl divide-y responsive-table">
                       <div className="grid grid-cols-[1fr_120px_120px] text-xs uppercase tracking-wide text-slate-500 responsive-table__header">
-                        <div className="px-3 py-2">??????????</div>
-                        <div className="px-3 py-2 text-right">???'???????????</div>
-                        <div className="px-3 py-2 text-right">???????.</div>
+                        <div className="px-3 py-2">Назва</div>
+                        <div className="px-3 py-2 text-right">Отримано</div>
+                        <div className="px-3 py-2 text-right">Макс.</div>
                       </div>
                       {labs.length === 0 ? (
-                        <div className="px-3 py-3 text-sm text-slate-500">?c?? ????????" ?>???+???????'????????:.</div>
+                        <div className="px-3 py-3 text-sm text-slate-500">Ще немає лабораторних робіт.</div>
                       ) : (
                         labs.map((l) => (
                           <div key={l.id} className="grid grid-cols-[1fr_120px_120px] text-sm text-slate-600 responsive-table__row">
                             <div className="px-3 py-2 responsive-table__cell">
-                              <span className="responsive-table__cell-label">??????????</span>
-                              ?>???+?? ?"-{l.number}{l.topic ? ` ??? ${l.topic}` : ""}
+                              <span className="responsive-table__cell-label">Назва</span>
+                              Лабораторна №{l.number}
+                              {l.topic ? " — " + l.topic : ""}
                             </div>
                             <div className="px-3 py-2 text-right responsive-table__cell">
-                              <span className="responsive-table__cell-label">???'???????????</span>
-                              {l.obtainedScore ?? "??""}
+                              <span className="responsive-table__cell-label">Отримано</span>
+                              {l.obtainedScore ?? "—"}
                             </div>
                             <div className="px-3 py-2 text-right responsive-table__cell">
-                              <span className="responsive-table__cell-label">???????.</span>
+                              <span className="responsive-table__cell-label">Макс.</span>
                               {l.maxScore}
                             </div>
                           </div>
@@ -170,5 +171,9 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
     </div>
   );
 }
+
+
+
+
 
 
