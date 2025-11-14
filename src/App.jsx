@@ -102,7 +102,7 @@ export default function App() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-3 justify-end">
+          <div className="user-meta flex items-center gap-3 justify-end">
             <div className="text-right">
               <p className="text-sm text-slate-500">{user.displayName || "Користувач"}</p>
               <p className="text-sm text-slate-400">{user.email}</p>

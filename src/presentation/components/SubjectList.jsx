@@ -125,7 +125,7 @@ export default function SubjectList({ uid, activeSemester, onOpenSubject }) {
       {subjects.length === 0 ? (
         <div className="card text-center text-slate-500 py-12">У цьому семестрі ще немає предметів.</div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {subjects.map((s) => (
             <div key={s.id} className="card flex flex-col gap-4">
               <div className="flex items-center gap-4">
@@ -224,3 +224,4 @@ export default function SubjectList({ uid, activeSemester, onOpenSubject }) {
     </div>
   );
 }
+

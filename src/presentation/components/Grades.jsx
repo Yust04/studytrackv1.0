@@ -104,21 +104,30 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
               {isOpen && (
                 <div className="mt-4 space-y-5">
                   <div>
-                    <p className="text-sm text-slate-500 mb-2">Лабораторні</p>
-                    <div className="border border-slate-200 rounded-2xl divide-y">
-                      <div className="grid grid-cols-[1fr_120px_120px] text-xs uppercase tracking-wide text-slate-500">
-                        <div className="px-3 py-2">Назва</div>
-                        <div className="px-3 py-2 text-right">Отримано</div>
-                        <div className="px-3 py-2 text-right">Макс.</div>
+                    <p className="text-sm text-slate-500 mb-2">?>???+???????'???????-</p>
+                    <div className="border border-slate-200 rounded-2xl divide-y responsive-table">
+                      <div className="grid grid-cols-[1fr_120px_120px] text-xs uppercase tracking-wide text-slate-500 responsive-table__header">
+                        <div className="px-3 py-2">??????????</div>
+                        <div className="px-3 py-2 text-right">???'???????????</div>
+                        <div className="px-3 py-2 text-right">???????.</div>
                       </div>
                       {labs.length === 0 ? (
-                        <div className="px-3 py-3 text-sm text-slate-500">Ще немає лабораторних.</div>
+                        <div className="px-3 py-3 text-sm text-slate-500">?c?? ????????" ?>???+???????'????????:.</div>
                       ) : (
                         labs.map((l) => (
-                          <div key={l.id} className="grid grid-cols-[1fr_120px_120px] text-sm text-slate-600">
-                            <div className="px-3 py-2">Лаба №{l.number}{l.topic ? ` • ${l.topic}` : ""}</div>
-                            <div className="px-3 py-2 text-right">{l.obtainedScore ?? "—"}</div>
-                            <div className="px-3 py-2 text-right">{l.maxScore}</div>
+                          <div key={l.id} className="grid grid-cols-[1fr_120px_120px] text-sm text-slate-600 responsive-table__row">
+                            <div className="px-3 py-2 responsive-table__cell">
+                              <span className="responsive-table__cell-label">??????????</span>
+                              ?>???+?? ?"-{l.number}{l.topic ? ` ??? ${l.topic}` : ""}
+                            </div>
+                            <div className="px-3 py-2 text-right responsive-table__cell">
+                              <span className="responsive-table__cell-label">???'???????????</span>
+                              {l.obtainedScore ?? "??""}
+                            </div>
+                            <div className="px-3 py-2 text-right responsive-table__cell">
+                              <span className="responsive-table__cell-label">???????.</span>
+                              {l.maxScore}
+                            </div>
                           </div>
                         ))
                       )}
@@ -132,7 +141,7 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
                     </div>
                     <div className="space-y-3">
                       {mods.map((m, i) => (
-                        <div key={i} className="grid grid-cols-[1fr_140px_140px_auto] gap-3">
+                        <div key={i} className="grid grid-cols-[1fr_140px_140px_auto] gap-3 module-row">
                           <input className="input" placeholder="Назва" value={m.name ?? ""} onChange={(e) => setModuleField(s.id, i, "name", e.target.value)} />
                           <input className="input text-right" placeholder="Отримано" value={m.obtained ?? ""} onChange={(e) => setModuleField(s.id, i, "obtained", e.target.value)} />
                           <input className="input text-right" placeholder="Макс." value={m.max ?? ""} onChange={(e) => setModuleField(s.id, i, "max", e.target.value)} />
@@ -161,3 +170,5 @@ export default function Grades({ uid, activeSemester, subjects = [], labsBySubje
     </div>
   );
 }
+
+

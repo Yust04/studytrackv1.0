@@ -16,6 +16,12 @@
   --subject-icon-size: 64px;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html,
 body,
 #root {
@@ -31,6 +37,7 @@ body {
     radial-gradient(circle at 80% 0%, rgba(0, 91, 151, 0.12), transparent 40%),
     var(--surface-muted);
   min-height: 100%;
+  margin: 0;
 }
 
 .app-shell {
@@ -98,6 +105,10 @@ body {
   border-color: var(--border);
   background: rgba(0, 91, 151, 0.08);
   color: var(--brand-secondary);
+}
+
+.user-meta {
+  min-width: 0;
 }
 
 .app-content {
@@ -205,6 +216,16 @@ body {
   border-color: rgba(52, 211, 153, 0.3);
 }
 
+.status-dot {
+  width: 0.625rem;
+  height: 0.625rem;
+  min-width: 0.625rem;
+  min-height: 0.625rem;
+  border-radius: 999px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -243,6 +264,100 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.responsive-table {
+  border-radius: 1.5rem;
+  overflow: hidden;
+}
+
+.responsive-table__cell-label {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .app-header .inner {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 1.25rem;
+  }
+
+  .app-header .inner > * {
+    width: 100%;
+  }
+
+  .app-header .brand {
+    justify-content: center;
+  }
+
+  .app-nav {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .app-nav button {
+    flex: 1 1 calc(50% - 0.75rem);
+  }
+
+  .user-meta {
+    justify-content: center;
+  }
+
+  .user-meta .text-right {
+    text-align: center;
+  }
+
+  .modal-panel {
+    padding: 1.5rem;
+  }
+
+  .module-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .module-row .btn {
+    width: 100%;
+    justify-content: center;
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .responsive-table__header {
+    display: none;
+  }
+
+  .responsive-table__row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .responsive-table__cell {
+    text-align: left !important;
+  }
+
+  .responsive-table__cell-label {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.15rem;
+  }
+
+  .app-nav button {
+    flex-basis: 100%;
+  }
+
+  .module-row {
+    grid-template-columns: 1fr;
+  }
+
+  .module-row .btn {
+    grid-column: auto;
+  }
 }
 
 ::-webkit-scrollbar {

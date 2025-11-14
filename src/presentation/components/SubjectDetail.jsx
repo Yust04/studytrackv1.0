@@ -50,13 +50,13 @@ export default function SubjectDetail({ uid, semesterId, subject, onBack }) {
     const normalized = normalizeStatus(st);
     const color =
       normalized === STATUS.NOT_STARTED
-        ? "#cbd5f5"
+        ? "#94a3b8"
         : normalized === STATUS.IN_PROGRESS
           ? "#fbbf24"
           : normalized === STATUS.DONE
             ? "#34d399"
             : "#2b5eff";
-    return <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />;
+    return <span className="status-dot" style={{ backgroundColor: color }} />;
   };
 
   return (
