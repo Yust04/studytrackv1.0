@@ -58,7 +58,7 @@ export default function Dashboard({ activeSemesterNumber, activeSemester, subjec
     subjectScoreEntries.length > 0 ? subjectScoreEntries.reduce((sum, { obtained }) => sum + obtained, 0) / subjectScoreEntries.length : 0;
   const avgDisplay = subjectScoreEntries.length ? Number(avgSubjectPoints.toFixed(1)) : 0;
 
-  const daysLeft = activeSemester?.endDate ? Math.max(0, dayjs(activeSemester.endDate).diff(dayjs(), "day")) : "вЂ”";
+  const daysLeft = activeSemester?.endDate ? Math.max(0, dayjs(activeSemester.endDate).diff(dayjs(), "day")) : 0;
 
   const byMonth = {};
   allLabs.forEach((lab) => {
